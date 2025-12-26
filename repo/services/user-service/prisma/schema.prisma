@@ -1,0 +1,87 @@
+// Prisma Schema for User Service
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum Role {
+  USER
+  SELLER
+  ADMIN
+}
+
+enum AddressType {
+  HOME
+  WORK
+  OTHER
+}
+
+// ==========================================
+// MODELS
+// ==========================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  firstName     String    @map("first_name")
+  lastName      String    @map("last_name")
+  phone         String?   @unique
+  avatar        String?
+  role          Role      @default(USER)
+  isVerified    Boolean   @default(false) @map("is_verified")
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  addresses     Address[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Address {
+  id            String      @id @default(uuid())
+  userId        String      @map("user_id")
+  type          AddressType @default(HOME)
+  title         String      // e.g., "Uy", "Ish joyi"
+  fullAddress   String      @map("full_address")
+  city          String
+  district      String?
+  postalCode    String?     @map("postal_code")
+  isDefault     Boolean     @default(false) @map("is_default")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model Session {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  token         String    @unique
+  userAgent     String?   @map("user_agent")
+  ipAddress     String?   @map("ip_address")
+  expiresAt     DateTime  @map("expires_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
